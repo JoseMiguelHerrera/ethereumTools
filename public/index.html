@@ -1,0 +1,136 @@
+<html>
+
+<head>
+  <script src="http://code.dappbench.com/browser-solc.min.js" type="text/javascript"></script>
+
+  <script>
+    function deploy(contracts, gas) {
+
+      var _greeting = "Welcome to Jose's first ETHEREUM SMART CONTRACT"
+
+      const bytecode = contracts[":greeter"].bytecode;
+      const abi = JSON.parse(contracts[":greeter"].interface);
+
+      // Contract object
+      const contract = web3.eth.contract(abi);
+
+
+      var greeter = contract.new(_greeting, { from: web3.eth.accounts[0], data: '0x' + bytecode, gas: gas*10 }, function (e, contract) {
+
+
+        if (!e)
+          console.log(contract)
+        else
+          console.log(e)
+
+      })
+
+
+
+
+
+
+
+    }
+
+
+    function compile() {
+
+      const contract = document.getElementById('contractCode').value
+
+      const compileBTN = document.getElementById('compile');
+      compileBTN.innerText = "Compiling...";
+
+
+      BrowserSolc.getVersions(function (soljsonSources, soljsonReleases) {
+        //console.log(soljsonSources);
+        //console.log(soljsonReleases);
+      });
+
+
+
+
+      BrowserSolc.loadVersion("soljson-v0.4.12-nightly.2017.6.8+commit.51fcfbcf.js", function (compiler) {
+        console.log("trying to compile")
+        source = contract;
+        optimize = 1;
+        result = compiler.compile(source, optimize);
+
+        if (result.contracts) {
+          compileBTN.innerText = "Done"
+          const opDiv = document.getElementById('operations')
+          const deployButton = document.createElement('button')
+          deployButton.innerText = "Deploy Contract for " + result.contracts[":greeter"].gasEstimates.creation[1] + " wei";
+
+          deployButton.addEventListener('click', function () {
+            deploy(result.contracts, result.contracts[":greeter"].gasEstimates.creation[1]);
+          });
+
+          opDiv.appendChild(deployButton)
+        } else {
+          alert(result.errors);
+        }
+
+      });
+
+
+    }
+
+
+
+    window.addEventListener('load', function () {
+
+      const accInfo = document.getElementById('accountInfo')
+      const web3text = document.createElement('p')
+      const addressbox = document.getElementById("address")
+
+
+      // Checking if Web3 has been injected by the browser (Mist/MetaMask)
+      if (typeof web3 !== 'undefined') {
+        // Use Mist/MetaMask's provider
+
+        window.web3 = new Web3(web3.currentProvider);
+        web3text.innerText = "Web 3 loaded by metamask, ready for ethereum work";
+
+        web3.eth.getAccounts(function (error, accounts) {
+          addressbox.setAttribute("value", accounts[0])
+        });
+      } else {
+        web3text.innerText = 'No web3? You should consider trying MetaMask!'
+        // fallback - use your fallback strategy (local node / hosted node + in-dapp id mgmt / fail)
+        //window.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+      }
+      accInfo.appendChild(web3text)
+
+
+
+
+    })
+  </script>
+  <title> Jose's Ethereum playground</title>
+</head>
+
+
+
+<body>
+
+  <main>
+
+    <div id="accountInfo">
+    </div>
+
+
+    Metamask ethereum address: <input id="address" type="text" name="eth address" value="" readonly><br> Solidity contract:
+    <textarea id="contractCode" style="width:250px;height:150px;">Enter your solidity contract here</textarea>
+    <br>
+
+
+    <div id="operations">
+      <button id="compile" type="button" onclick="compile();">Compile solidity code</button>
+    </div>
+
+  </main>
+
+</body>
+
+</html>
